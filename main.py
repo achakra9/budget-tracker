@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox
 import pandas as pd
 import os
 from datetime import datetime, timedelta
+import matplotlib.pyplot as plt
 
 # File to store the budget data
 DATA_FILE = "budget_data.csv"
@@ -12,14 +13,12 @@ DEFAULT_CATEGORIES = [
     "Cell Phone", "Total"
 ]
 
-# Function to initialize the data file
-def initialize_data_file():
-    if not os.path.exists(DATA_FILE):
-        df = pd.DataFrame(columns=["Date", "Category", "Amount"])
-        df.to_csv(DATA_FILE, index=False)
-    return pd.read_csv(DATA_FILE, parse_dates=["Date"])
+# Check if data file exists, create if not
+if not os.path.exists(DATA_FILE):
+    df = pd.DataFrame(columns=["Date", "Category", "Amount"])
+    df.to_csv(DATA_FILE, index=False)
 
-
+# BudgetTrackerApp class
 class BudgetTrackerApp:
     def __init__(self, root):
         self.root = root
@@ -27,7 +26,7 @@ class BudgetTrackerApp:
         self.root.geometry("800x600")
 
         # Load data
-        self.data = initialize_data_file()
+        self.data = pd.read_csv(DATA_FILE, parse_dates=["Date"])
         self.categories = list(DEFAULT_CATEGORIES)
 
         # Build GUI
@@ -70,9 +69,8 @@ class BudgetTrackerApp:
         tk.Button(view_frame, text="View Weekly Expenses", command=self.view_weekly).grid(row=0, column=0, padx=5, pady=5)
         tk.Button(view_frame, text="View Monthly Expenses", command=self.view_monthly).grid(row=0, column=1, padx=5, pady=5)
 
-        # Summary frame
-        self.summary_frame = tk.Frame(self.root)
-        self.summary_frame.pack(pady=10, fill="both", expand=True)
+        # Exit button
+        tk.Button(self.root, text="Exit", command=self.root.quit, bg="red", fg="white").pack(pady=10)
 
     def add_expense(self):
         try:
@@ -108,25 +106,30 @@ class BudgetTrackerApp:
 
     def show_expenses(self, period):
         if period == "weekly":
-            start_date = datetime.now() - timedelta(days=7)
-            title = "Weekly Expenses"
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=7)
+            title = f"Weekly Expenses ({start_date.strftime('%m/%d/%Y')} - {end_date.strftime('%m/%d/%Y')})"
         else:  # monthly
-            start_date = datetime.now() - timedelta(days=30)
-            title = "Monthly Expenses"
+            end_date = datetime.now()
+            start_date = end_date.replace(day=1)  # Start of the current month
+            title = f"Monthly Expenses ({start_date.strftime('%m/%Y')})"
 
-        filtered_data = self.data[self.data["Date"] >= start_date]
+        # Filter data for the specified date range
+        filtered_data = self.data[(self.data["Date"] >= start_date) & (self.data["Date"] <= end_date)]
         summary = filtered_data.groupby("Category")["Amount"].sum()
 
-        self.display_summary(title, summary)
+        self.plot_expenses(title, summary)
 
-    def display_summary(self, title, summary):
-        for widget in self.summary_frame.winfo_children():
-            widget.destroy()
-
-        tk.Label(self.summary_frame, text=title, font=("Arial", 16, "bold")).pack(pady=10)
-
-        for category, amount in summary.items():
-            tk.Label(self.summary_frame, text=f"{category}: ${amount:.2f}", font=("Arial", 12)).pack(anchor="w")
+    def plot_expenses(self, title, summary):
+        # Create a bar plot of expenses with title and labels
+        plt.figure(figsize=(10, 6))
+        summary.plot(kind="bar", color="skyblue", edgecolor="black")
+        plt.title(title, fontsize=16)
+        plt.ylabel("Amount ($)", fontsize=12)
+        plt.xlabel("Category", fontsize=12)
+        plt.xticks(rotation=45, fontsize=10)
+        plt.tight_layout()
+        plt.show()
 
 
 if __name__ == "__main__":
