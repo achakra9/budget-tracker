@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox
 import pandas as pd
 import os
 from datetime import datetime, timedelta
+import seaborn as sns
 import matplotlib.pyplot as plt
 
 # File to store the budget data
@@ -127,7 +128,8 @@ class BudgetTrackerApp:
     def plot_expenses(self, title, summary):
         # Create a bar plot of expenses with total included
         plt.figure(figsize=(10, 6))
-        bars = summary.plot(kind="bar", color="skyblue", edgecolor="black")
+        colors = sns.color_palette("tab10", len(summary))
+        bars = summary.plot(kind="bar", color=colors, edgecolor="black")
 
         plt.title(title, fontsize=16)
         plt.ylabel("Amount ($)", fontsize=12)
