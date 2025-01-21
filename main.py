@@ -118,18 +118,29 @@ class BudgetTrackerApp:
         filtered_data = self.data[(self.data["Date"] >= start_date) & (self.data["Date"] <= end_date)]
         summary = filtered_data.groupby("Category")["Amount"].sum()
 
+        # Add total expenses as a new bar
+        total_expenses = summary.sum()
+        summary["Total"] = total_expenses
+
         self.plot_expenses(title, summary)
 
     def plot_expenses(self, title, summary):
-        # Create a bar plot of expenses with title and labels
+        # Create a bar plot of expenses with total included
         plt.figure(figsize=(10, 6))
-        summary.plot(kind="bar", color="skyblue", edgecolor="black")
+        bars = summary.plot(kind="bar", color="skyblue", edgecolor="black")
+
         plt.title(title, fontsize=16)
         plt.ylabel("Amount ($)", fontsize=12)
         plt.xlabel("Category", fontsize=12)
         plt.xticks(rotation=45, fontsize=10)
         plt.tight_layout()
+
+        # Add numerical labels on top of each bar
+        for i, value in enumerate(summary):
+            plt.text(i, value + (value * 0.01), f"${value:.2f}", ha='center', va='bottom', fontsize=10)
+
         plt.show()
+
 
 
 if __name__ == "__main__":
